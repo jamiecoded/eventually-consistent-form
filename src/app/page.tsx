@@ -11,10 +11,8 @@ export default function Page() {
   const [errors, setErrors] = useState<{ email?: string; amount?: string }>({});
   const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
 
-  // 🔒 hard duplicate lock
   const submitLock = useRef(false);
 
-  // ---------------- VALIDATION ----------------
   const validateForm = () => {
     const newErrors: { email?: string; amount?: string } = {};
 
@@ -38,7 +36,6 @@ export default function Page() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // ---------------- SUBMIT ----------------
   const submitForm = async () => {
     if (submitLock.current) return;
 
@@ -57,7 +54,6 @@ export default function Page() {
     submitLock.current = false;
   };
 
-  // ---------------- REQUEST + RETRY ----------------
   const sendRequest = async (requestId: string, retryCount: number) => {
     try {
       const res = await fetch("/api/mock", {
@@ -84,7 +80,6 @@ export default function Page() {
     }
   };
 
-  // ---------------- UI HELPERS ----------------
   const statusColors: Record<Status, string> = {
     idle: "bg-yellow-400 text-black",
     pending: "bg-amber-500 text-black",
@@ -95,7 +90,6 @@ export default function Page() {
 
   const isLoading = status === "pending" || status === "retrying";
 
-  // ---------------- UI ----------------
   return (
     <main
       className="min-h-screen flex flex-col items-center justify-center text-white relative px-4"
@@ -105,10 +99,8 @@ export default function Page() {
         backgroundPosition: "center",
       }}
     >
-      {/* Overlay */}
       <div className="absolute inset-0 bg-black/40" />
 
-      {/* TITLE (RESPONSIVE) */}
       <div className="relative z-10 mb-10 text-center">
         <h1 className="text-3xl sm:text-4xl md:text-5xl tracking-[0.25em] font-light text-gray-300">
           EVENTUALLY
@@ -119,10 +111,8 @@ export default function Page() {
         </h2>
       </div>
 
-      {/* GLASS CARD (RESPONSIVE WIDTH + PADDING) */}
       <div className="relative z-10 w-[90%] sm:w-full max-w-md backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-6 sm:p-8 md:p-10 shadow-2xl transition-all duration-500">
 
-        {/* EMAIL */}
         <input
           className={`w-full mb-2 px-4 sm:px-5 py-3 sm:py-4 rounded-xl bg-white/10 text-center text-sm sm:text-base placeholder:text-gray-300 outline-none transition ${
             errors.email
@@ -143,7 +133,6 @@ export default function Page() {
           </p>
         )}
 
-        {/* AMOUNT */}
         <input
           type="number"
           className={`w-full mb-2 px-4 sm:px-5 py-3 sm:py-4 rounded-xl bg-white/10 text-center text-sm sm:text-base placeholder:text-gray-300 outline-none transition ${
@@ -165,7 +154,6 @@ export default function Page() {
           </p>
         )}
 
-        {/* STATUS PILL (RESPONSIVE SIZE) */}
         <div className="flex justify-center mb-6">
           <span
             className={`px-5 sm:px-6 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-300 ${statusColors[status]}`}
@@ -174,7 +162,6 @@ export default function Page() {
           </span>
         </div>
 
-        {/* SUBMIT BUTTON */}
         <button
           onClick={submitForm}
           disabled={isLoading}
