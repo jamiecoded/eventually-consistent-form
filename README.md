@@ -1,36 +1,100 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Eventually Consistent Form
 
-## Getting Started
+A small full-stack Next.js application that simulates **eventual consistency** in real-world distributed systems.
 
-First, run the development server:
+The app demonstrates how modern UIs handle unreliable backends using optimistic UI updates, retries, and idempotent requests — without creating duplicate submissions.
+
+---
+
+## 🚀 Overview
+
+This project implements a single-page form that collects:
+
+- email
+- amount (number)
+
+After submission, the UI immediately enters a **pending state** while a mock API responds with:
+
+- instant success (200)
+- temporary failure (503)
+- delayed success (5–10s)
+
+The goal is to model how production systems remain responsive and consistent despite unstable backend behavior.
+
+---
+
+## 🧠 Key Concepts Demonstrated
+
+### 1. Eventual Consistency
+
+The UI does not wait for the backend to finish before updating state.
+
+Instead:
+
+
+This mirrors real-world distributed workflows where systems converge to a final state over time.
+
+---
+
+### 2. Idempotent Submissions (Duplicate Prevention)
+
+Each submission generates a unique `requestId`.
+
+A **submission lock** prevents duplicate requests caused by rapid clicking or network delays.
+
+This ensures:
+
+- One logical submission per user action
+- No duplicate records visible to the user
+
+---
+
+### 3. Automatic Retry Strategy
+
+Temporary failures (503) trigger automatic retries:
+
+- Maximum retry limit
+- Controlled retry delay
+- UI reflects `retrying` state
+
+This simulates resilience patterns commonly used in production APIs.
+
+---
+
+### 4. UI State Machine
+
+The interface behaves as a finite state machine:
+
+
+Each state updates:
+
+- status color
+- button interactivity
+- visual feedback
+
+---
+
+## 🎨 UX Decisions
+
+- Immediate pending feedback prevents perceived lag
+- Disabled submit button during active requests
+- Clear visual status indicators
+- Glassmorphism UI with responsive design
+
+---
+
+## 🛠 Tech Stack
+
+- Next.js (App Router)
+- React
+- Tailwind CSS
+- Mock API route
+- TypeScript
+
+---
+
+## 📦 Running Locally
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

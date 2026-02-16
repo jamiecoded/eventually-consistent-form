@@ -1,65 +1,192 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState, useRef } from "react";
+
+type Status = "idle" | "pending" | "retrying" | "success" | "error";
+
+export default function Page() {
+  const [email, setEmail] = useState("");
+  const [amount, setAmount] = useState("");
+  const [status, setStatus] = useState<Status>("idle");
+  const [errors, setErrors] = useState<{ email?: string; amount?: string }>({});
+  const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
+
+  // 🔒 hard duplicate lock
+  const submitLock = useRef(false);
+
+  // ---------------- VALIDATION ----------------
+  const validateForm = () => {
+    const newErrors: { email?: string; amount?: string } = {};
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!emailRegex.test(email)) {
+      newErrors.email = "Invalid email format";
+    }
+
+    const num = Number(amount);
+    if (!amount.trim()) {
+      newErrors.amount = "Amount is required";
+    } else if (isNaN(num) || num <= 0) {
+      newErrors.amount = "Amount must be a positive number";
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // ---------------- SUBMIT ----------------
+  const submitForm = async () => {
+    if (submitLock.current) return;
+
+    const isValid = validateForm();
+    if (!isValid) return;
+
+    submitLock.current = true;
+
+    const requestId = crypto.randomUUID();
+
+    setActiveRequestId(requestId);
+    setStatus("pending");
+
+    await sendRequest(requestId, 0);
+
+    submitLock.current = false;
+  };
+
+  // ---------------- REQUEST + RETRY ----------------
+  const sendRequest = async (requestId: string, retryCount: number) => {
+    try {
+      const res = await fetch("/api/mock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, amount, requestId }),
+      });
+
+      if (!res.ok) throw new Error("temporary failure");
+
+      setStatus("success");
+      setActiveRequestId(null);
+    } catch {
+      if (retryCount < 3) {
+        setStatus("retrying");
+
+        setTimeout(() => {
+          sendRequest(requestId, retryCount + 1);
+        }, 1500);
+      } else {
+        setStatus("error");
+        setActiveRequestId(null);
+      }
+    }
+  };
+
+  // ---------------- UI HELPERS ----------------
+  const statusColors: Record<Status, string> = {
+    idle: "bg-yellow-400 text-black",
+    pending: "bg-amber-500 text-black",
+    retrying: "bg-blue-500 text-white",
+    success: "bg-green-500 text-white",
+    error: "bg-red-500 text-white",
+  };
+
+  const isLoading = status === "pending" || status === "retrying";
+
+  // ---------------- UI ----------------
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main
+      className="min-h-screen flex flex-col items-center justify-center text-white relative px-4"
+      style={{
+        backgroundImage: "url('/bg.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-black/40" />
+
+      {/* TITLE (RESPONSIVE) */}
+      <div className="relative z-10 mb-10 text-center">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl tracking-[0.25em] font-light text-gray-300">
+          EVENTUALLY
+        </h1>
+
+        <h2 className="text-4xl sm:text-5xl md:text-6xl font-semibold tracking-wide">
+          CONSISTENT FORM
+        </h2>
+      </div>
+
+      {/* GLASS CARD (RESPONSIVE WIDTH + PADDING) */}
+      <div className="relative z-10 w-[90%] sm:w-full max-w-md backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-6 sm:p-8 md:p-10 shadow-2xl transition-all duration-500">
+
+        {/* EMAIL */}
+        <input
+          className={`w-full mb-2 px-4 sm:px-5 py-3 sm:py-4 rounded-xl bg-white/10 text-center text-sm sm:text-base placeholder:text-gray-300 outline-none transition ${
+            errors.email
+              ? "ring-2 ring-red-500"
+              : "focus:ring-2 focus:ring-white/20"
+          }`}
+          placeholder="Email"
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            setErrors((prev) => ({ ...prev, email: undefined }));
+          }}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+
+        {errors.email && (
+          <p className="text-red-400 text-sm mb-3 text-center">
+            {errors.email}
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+        )}
+
+        {/* AMOUNT */}
+        <input
+          type="number"
+          className={`w-full mb-2 px-4 sm:px-5 py-3 sm:py-4 rounded-xl bg-white/10 text-center text-sm sm:text-base placeholder:text-gray-300 outline-none transition ${
+            errors.amount
+              ? "ring-2 ring-red-500"
+              : "focus:ring-2 focus:ring-white/20"
+          }`}
+          placeholder="Amount"
+          value={amount}
+          onChange={(e) => {
+            setAmount(e.target.value);
+            setErrors((prev) => ({ ...prev, amount: undefined }));
+          }}
+        />
+
+        {errors.amount && (
+          <p className="text-red-400 text-sm mb-4 text-center">
+            {errors.amount}
+          </p>
+        )}
+
+        {/* STATUS PILL (RESPONSIVE SIZE) */}
+        <div className="flex justify-center mb-6">
+          <span
+            className={`px-5 sm:px-6 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-300 ${statusColors[status]}`}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            {status}
+          </span>
         </div>
-      </main>
-    </div>
+
+        {/* SUBMIT BUTTON */}
+        <button
+          onClick={submitForm}
+          disabled={isLoading}
+          className={`w-full py-3 sm:py-4 rounded-xl text-base sm:text-lg tracking-widest transition-all duration-300 ${
+            isLoading
+              ? "bg-black/30 cursor-not-allowed"
+              : "bg-black hover:bg-black/50 active:scale-[0.97] shadow-xl"
+          }`}
+        >
+          SUBMIT
+        </button>
+      </div>
+    </main>
   );
 }
