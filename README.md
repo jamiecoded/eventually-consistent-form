@@ -1,9 +1,14 @@
 # Eventually Consistent Form
 
+<p align="center">
+  <img src="public/preview/preview.png" alt="Eventually Consistent Form Preview" width="900"/>
+</p>
+
 A small full-stack Next.js application that simulates **eventual consistency** in real-world distributed systems.
 
 The app demonstrates how modern UIs handle unreliable backends using optimistic UI updates, retries, and idempotent requests — without creating duplicate submissions.
 
+Live Demo: https://eventuallyconsistent-form.vercel.app/
 ---
 
 ## 🚀 Overview
